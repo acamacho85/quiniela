@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block title %}Calendario Liga MX{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📅 Calendario Liga MX 2025</h2>
+
+<!-- Tabs por jornada -->
+<ul class="nav nav-tabs mb-3" id="jornadaTabs" role="tablist">
+  {% for j in jornadas %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if loop.first %}active{% endif %}" id="tab-{{ loop.index }}" data-bs-toggle="tab" data-bs-target="#content-{{ loop.index }}" type="button" role="tab">
+      {{ j }}
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="tab-content" id="jornadaTabsContent">
+    {% for j in jornadas %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="content-{{ loop.index }}" role="tabpanel">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Local</th>
+                        <th>Resultado</th>
+                        <th>Visitante</th>
+                        <th>Estadio</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Espectadores</th>
+                        <th>Amonestados</th>
+                        <th>Expulsados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in calendario[j] %}
+                    <tr>
+                        <td>
+                            <img src="{{ url_for('static', filename='img/equipos/' ~ get_logo_slug(p.local) ~ '.png') }}" 
+                                 alt="{{ p.local }}" width="32" height="32">
+                            {{ p.local }}
+                        </td>
+                        <td>{{ p.resultado }}</td>
+                        <td>
+                            <img src="{{ url_for('static', filename='img/equipos/' ~ get_logo_slug(p.visitante) ~ '.png') }}" 
+                                 alt="{{ p.visitante }}" width="32" height="32">
+                            {{ p.visitante }}
+                        </td>
+                        <td>{{ p.estadio }}</td>
+                        <td>{{ p.fecha }}</td>
+                        <td>{{ p.hora }}</td>
+                        <td>{{ p.espectadores }}</td>
+                        <td>{{ p.amonestados }}</td>
+                        <td>{{ p.expulsados }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
