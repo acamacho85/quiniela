@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Evaluación - {{ jornada_sel if jornada_sel else "Todas las jornadas" }}</h2>
+
+<!-- Formulario de selección de jornada -->
+<form method="get" id="form-jornada">
+    <label for="jornada">Selecciona jornada:</label>
+    <select name="jornada" id="jornada" onchange="document.getElementById('form-jornada').submit()">
+        <option value="">Todas</option>
+        {% for j in jornadas %}
+            <option value="{{ j }}" {% if j == jornada_sel %}selected{% endif %}>Jornada {{ j }}</option>
+        {% endfor %}
+    </select>
+</form>
+
+<!-- Ranking en columnas -->
+<div class="ranking-wrapper">
+    <table class="ranking-table">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Aciertos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set max_aciertos = ranking[0][1] if ranking else 1 %}
+            {% set min_aciertos = ranking[-1][1] if ranking else 0 %}
+
+            {% for usuario, aciertos in ranking %}
+                {% set ratio = (aciertos - min_aciertos) / ((max_aciertos - min_aciertos) or 1) %}
+                {% set r = 255 - (ratio * 155) | int %}
+                {% set g = 100 + (ratio * 155) | int %}
+                {% set b = 100 %}
+                {% set uid = 'user-' ~ usuario|replace(' ', '-') %}
+
+                <tr style="background-color: rgb({{r}}, {{g}}, {{b}}); color: white;">
+                    <td>
+                        <a href="#{{ uid }}" class="user-link">{{ usuario }}</a>
+                    </td>
+                    <td class="center">{{ aciertos }}</td>
+                </tr>
+
+                {% if loop.index % 10 == 0 and not loop.last %}
+                    </tbody></table>
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Aciertos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<hr>
+
+<!-- Detalle de usuarios en acordeones -->
+<h2>Detalle por usuario</h2>
+<div class="accordion">
+{% for usuario, datos in evaluacion.items() %}
+    {% set uid = 'user-' ~ usuario|replace(' ', '-') %}
+    <div id="{{ uid }}" class="accordion-item">
+        <button class="accordion-header" onclick="toggleAccordion(this)">
+            {{ usuario }} ({{ datos.aciertos }}/{{ datos.total }})
+        </button>
+        <div class="accordion-body">
+            <table class="detalle-table">
+                <thead>
+                    <tr>
+                        <th>Partido</th>
+                        <th>Resultado Real</th>
+                        <th>Pronóstico</th>
+                        <th>Acierto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in datos.detalle %}
+                    <tr class="{{ 'ok' if d.correcto else 'fail' }}">
+                        <td>
+                            {% set local, visitante = d.partido.split(' vs ') %}
+                            <img src="{{ url_for('static', filename='img/equipos/' + EQUIPOS.get(local, 'default') + '.png') }}" 
+                                alt="{{ local }}" width="30">
+                            {{ local }}
+                            vs
+                            <img src="{{ url_for('static', filename='img/equipos/' + EQUIPOS.get(visitante, 'default') + '.png') }}" 
+                                alt="{{ visitante }}" width="30">
+                            {{ visitante }}
+                        </td>
+                        <td>{{ d.resultado_real }}</td>
+                        <td>{{ d.pronostico }}</td>
+                        <td>{{ '✅' if d.correcto else '❌' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+<style>
+/* Ranking */
+.ranking-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.ranking-table th, .ranking-table td {
+    padding: 0.5rem;
+    text-align: left;
+}
+.ranking-table .center {
+    text-align: center;
+}
+.user-link {
+    color: white;
+    font-weight: bold;
+    text-decoration: underline;
+}
+.user-link:hover {
+    color: #ff0;
+}
+
+/* Acordeón */
+.accordion-header {
+    width: 100%;
+    text-align: left;
+    padding: 0.7rem;
+    margin: 0.3rem 0;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.accordion-body {
+    display: none;
+    padding: 0.5rem;
+}
+.accordion-body table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.accordion-body th, .accordion-body td {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+}
+.accordion-body tr.ok { background: #d4edda; }
+.accordion-body tr.fail { background: #f8d7da; }
+</style>
+
+<script>
+function toggleAccordion(btn) {
+    const body = btn.nextElementSibling;
+    body.style.display = body.style.display === "block" ? "none" : "block";
+}
+
+// Abrir automáticamente acordeón si llegamos desde el ranking
+window.addEventListener("DOMContentLoaded", () => {
+    if (window.location.hash) {
+        const el = document.querySelector(window.location.hash + " .accordion-header");
+        if (el) {
+            el.scrollIntoView({behavior: "smooth", block: "center"});
+            el.click(); // abre automáticamente
+        }
+    }
+});
+</script>
+
+{% endblock %}
